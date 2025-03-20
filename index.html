@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Send Message to T5 Display</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+    textarea {
+      width: 100%;
+      font-size: 1.1em;
+      margin-top: 10px;
+    }
+    #counter {
+      font-size: 0.9em;
+      color: #666;
+    }
+    #footerNote {
+      font-size: 0.85em;
+      color: darkred;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📨 Send a Message to the T5 Display</h2>
+  <button onclick="signIn()">Sign in with Google</button>
+  <div id="form" style="display:none;">
+    <p id="userInfo"></p>
+    <label for="msg">Message (max 400 characters):</label><br>
+    <textarea id="msg" rows="5" maxlength="400" oninput="updateCounter()"></textarea>
+    <p id="counter">0 / 400 characters</p>
+    <button onclick="submitMessage()">Send to Display</button>
+    <p id="status"></p>
+    <div id="footerNote">
+      ⚠️ Avoid using special characters like <code>"</code> in your message, as they may not render correctly on the display.
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAN6Eo9v_0W0h0KOAPLNoOOo8M9Uwiv8PI",
+      authDomain: "t5messageboard.firebaseapp.com",
+      databaseURL: "https://t5messageboard-default-rtdb.firebaseio.com",
+      projectId: "t5messageboard",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    function signIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).then(result => {
+        document.getElementById("form").style.display = "block";
+        document.getElementById("userInfo").textContent = `Signed in as ${result.user.email}`;
+      }).catch(err => alert("Sign-in error: " + err.message));
+    }
+
+    function updateCounter() {
+      const msg = document.getElementById("msg").value;
+      document.getElementById("counter").innerText = `${msg.length} / 400 characters`;
+    }
+
+    function submitMessage() {
+      const msg = document.getElementById("msg").value.trim();
+      if (msg.length === 0) {
+        document.getElementById("status").textContent = "Message cannot be empty!";
+        return;
+      }
+
+      db.ref("message").set({
+        text: msg,
+        timestamp: new Date().toISOString()
+      }).then(() => {
+        document.getElementById("status").textContent = "✅ Message sent successfully!";
+        document.getElementById("msg").value = "";
+        updateCounter();
+      }).catch(err => {
+        document.getElementById("status").textContent = "❌ Error: " + err.message;
+      });
+    }
+  </script>
+</body>
+</html>
