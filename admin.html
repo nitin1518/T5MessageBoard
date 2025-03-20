@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>T5 Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h2>Admin Panel</h2>
+  <button onclick="signIn()">Sign in with Google</button>
+  <div id="content" style="display:none;">
+    <p id="user"></p>
+    <table border="1" id="messages">
+      <tr><th>Name</th><th>Message</th><th>Actions</th></tr>
+    </table>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAN6Eo9v_0W0h0KOAPLNoOOo8M9Uwiv8PI",
+      authDomain: "t5messageboard.firebaseapp.com",
+      databaseURL: "https://t5messageboard-default-rtdb.firebaseio.com",
+      projectId: "t5messageboard"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    function signIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).then(result => {
+        const email = result.user.email;
+        if (email === "nitin1518@gmail.com") {
+          document.getElementById("content").style.display = "block";
+          document.getElementById("user").innerText = "Signed in as " + email;
+          loadMessages();
+        } else {
+          alert("Access denied.");
+        }
+      });
+    }
+
+    function loadMessages() {
+      const table = document.getElementById("messages");
+      db.ref("messages").once("value", snapshot => {
+        table.innerHTML = '<tr><th>Name</th><th>Message</th><th>Actions</th></tr>';
+        snapshot.forEach(child => {
+          const key = child.key;
+          const data = child.val();
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td><input value="${data.name}" onchange="update('${key}', this.value, null)" /></td>
+            <td><textarea onchange="update('${key}', null, this.value)">${data.message}</textarea></td>
+            <td><button onclick="remove('${key}')">Delete</button></td>
+          `;
+          table.appendChild(row);
+        });
+      });
+    }
+
+    function update(key, newName, newMsg) {
+      const ref = db.ref("messages/" + key);
+      if (newName !== null) ref.update({ name: newName });
+      if (newMsg !== null) ref.update({ message: newMsg });
+    }
+
+    function remove(key) {
+      if (confirm("Delete this message?")) {
+        db.ref("messages/" + key).remove().then(loadMessages);
+      }
+    }
+  </script>
+</body>
+</html>
